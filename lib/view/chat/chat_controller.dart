@@ -7,9 +7,11 @@ import 'package:get/get.dart';
 
 class ChatController extends GetxController {
   Timer? _timer;
+  Timer? _interactionTimer;
   RxBool hasInteracted = false.obs; // Observable variable to track interaction
 
   bool isLoading = false;
+  bool isLoadingLiveAgent = false;
 
   final messageController = TextEditingController();
   String message = '';
@@ -20,42 +22,50 @@ class ChatController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _resetTimer();
+    _startTimeoutTimer();
   }
 
-  void _resetTimer() {
-    _timer?.cancel(); // Cancel any existing timer
-    // _timer = Timer(const Duration(seconds: 30), _handleTimeout);
+  /// Starts the main inactivity timer
+  void _startTimeoutTimer() {
+    _timer?.cancel();
     sec = 30;
     _timer = Timer.periodic(const Duration(seconds: 1), (t) {
-      sec--;
-      update();
-      if (sec == 0) {
+      if (!hasInteracted.value) {
+        sec--;
+        update();
+      }
+      if (sec <= 0) {
         _handleTimeout();
-        return;
       }
     });
   }
 
+  /// Handles inactivity timeout
   void _handleTimeout() {
     if (!hasInteracted.value) {
-      // Perform auto-logout or any other action
       Get.offAllNamed(AppRoutes.home);
     }
   }
 
-  void userInteractionDetected() async {
-    hasInteracted.value = true; // Mark as interacted
-    await Future.delayed(const Duration(seconds: 5));
-    hasInteracted.value = false;
-    _resetTimer(); // Reset timer on interaction
+  /// Detects user interaction and resets the timer after 5 seconds
+  void userInteractionDetected() {
+    hasInteracted.value = true;
+    _interactionTimer?.cancel();
+
+    _interactionTimer = Timer(const Duration(seconds: 5), () {
+      hasInteracted.value = false;
+    });
+
+    sec = 30; // Reset the countdown
+    update();
   }
 
   bool hasUserInteracted() {
-    return hasInteracted.value; // Return interaction status
+    return hasInteracted.value;
   }
 
-  sendMessage() async {
+  /// Handles sending user messages
+  Future<void> sendMessage() async {
     chats.add(
       ChatMessage(
         sender: "user",
@@ -65,14 +75,17 @@ class ChatController extends GetxController {
     );
     message = messageController.text;
     messageController.clear();
+    await Future.delayed(const Duration(seconds: 5));
     isLoading = true;
     update();
-    await Future.delayed(const Duration(seconds: 2));
+
+    userInteractionDetected();
     isLoading = false;
     _botResponse();
   }
 
-  _botResponse() {
+  /// Handles bot responses
+  Future<void> _botResponse() async {
     final response =
         data.where((suggestion) => suggestion['body'] == message).firstOrNull;
 
@@ -85,20 +98,28 @@ class ChatController extends GetxController {
         ),
       );
     } else {
+      isLoadingLiveAgent = true;
+      update();
+      await Future.delayed(const Duration(seconds: 5));
+
       chats.add(
         ChatMessage(
-          sender: "user",
-          message: "Rediirecting to a live agent, please wait....",
+          sender: "bot",
+          message: "Hello, I'm OlaEmma, your live agent support.",
           timestamp: DateTime.now(),
         ),
       );
+      isLoadingLiveAgent = false;
     }
     update();
+
+    userInteractionDetected();
   }
 
   @override
   void onClose() {
     _timer?.cancel();
+    _interactionTimer?.cancel();
     super.onClose();
   }
 }

@@ -24,7 +24,9 @@ class ChatPage extends StatelessWidget {
         return GestureDetector(
           behavior: HitTestBehavior.translucent,
           onTap: controller.userInteractionDetected,
-          onPanDown: (_) => controller.userInteractionDetected(),
+          onPanDown: (_) {
+            controller.userInteractionDetected();
+          },
           child: Scaffold(
             appBar: AppBar(
               backgroundColor: ColorManager.background,
@@ -106,6 +108,42 @@ class ChatPage extends StatelessWidget {
                               "seconds due to inactivity.",
                         ).paddingAll(16),
                 ),
+                if (controller.isLoadingLiveAgent || controller.isLoading)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(100),
+                          color: ColorManager.primary,
+                        ),
+                        padding: EdgeInsets.all(6),
+                        width: 24,
+                        height: 24,
+                        margin: EdgeInsets.only(left: 16),
+                        child: AssetManager.logo,
+                      )
+                          .animate()
+                          .scale(
+                            curve: Curves.ease,
+                            duration: 750.ms,
+                          )
+                          .marginOnly(right: 8),
+                      Expanded(
+                        child: Text(
+                          controller.isLoading
+                              ? "Ppleas wait..."
+                              : "Pleas hold on, i'm getting you a livev agent support",
+                          style: FontManager.getTextStyle(
+                            fontSize: 14,
+                            color: ColorManager.grey,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 SingleChildScrollView(
                   padding: EdgeInsets.only(left: 16, bottom: 16, top: 16),
                   scrollDirection: Axis.horizontal,
@@ -137,6 +175,7 @@ class ChatPage extends StatelessWidget {
                     ),
                     controller: controller.messageController,
                     textInputAction: TextInputAction.send,
+                    readOnly: controller.isLoading,
                     onSubmitted: (value) {
                       controller.sendMessage();
                     },
