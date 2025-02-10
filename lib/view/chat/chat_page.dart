@@ -133,7 +133,7 @@ class ChatPage extends StatelessWidget {
                       Expanded(
                         child: Text(
                           controller.isLoading
-                              ? "Ppleas wait..."
+                              ? "Please wait, getting you the best response..."
                               : "Pleas hold on, i'm getting you a livev agent support",
                           style: FontManager.getTextStyle(
                             fontSize: 14,

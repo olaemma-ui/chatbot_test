@@ -75,11 +75,11 @@ class ChatController extends GetxController {
     );
     message = messageController.text;
     messageController.clear();
-    await Future.delayed(const Duration(seconds: 5));
-    isLoading = true;
-    update();
 
     userInteractionDetected();
+    isLoading = true;
+    await Future.delayed(const Duration(seconds: 5));
+    update();
     isLoading = false;
     _botResponse();
   }
